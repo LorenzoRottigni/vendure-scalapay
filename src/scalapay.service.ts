@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import api from 'api'
+import fetch from 'node-fetch'
 import {
   Logger,
   OrderService,
@@ -20,6 +21,7 @@ import type {
   ScalapaySDK
 } from "./types";
 import { SCALAPAY_PLUGIN_OPTIONS, loggerCtx } from "./constants";
+import { getScalapayUrl } from "./common";
 
 @Injectable()
 export class ScalapayService {
@@ -38,7 +40,7 @@ export class ScalapayService {
     public async createOrder(order: Order): Promise<PostV2OrdersResponse | null> {
         try {
           const sdk = api('@scalapaydocs/v1.1#4won2elk6oqe21') as ScalapaySDK
-          sdk.server('https://integration.api.scalapay.com');
+          sdk.server(getScalapayUrl(this.options.environment));
           sdk.auth(`Bearer ${this.options.apiKey}`)
 
           const payload = this.normalizeCreateOrderInput(order)
@@ -114,7 +116,7 @@ export class ScalapayService {
     ): Promise<PostV2PaymentsCaptureResponse | null> {
         try {
           const sdk = api('@scalapaydocs/v1.1#tfpblg5few2e') as ScalapaySDK
-          sdk.server('https://integration.api.scalapay.com');
+          sdk.server(getScalapayUrl(this.options.environment));
           sdk.auth(`Bearer ${this.options.apiKey}`)
 
           const payload: ScalapayCaptureOrderInput = {
@@ -134,6 +136,32 @@ export class ScalapayService {
           Logger.error(err, loggerCtx)
           return null
         }
+    }
+
+    public async refundPayment(amount: number) {
+      try {
+        const url = `${getScalapayUrl(this.options.environment)}/v2/payments/refund`;
+        const options = {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            Authorization: `Bearer ${this.options.apiKey}`
+          },
+          body: JSON.stringify({
+            refundAmount: {
+              currency: 'EUR',
+              amount: amount ? (amount / 100)?.toString() : '0'
+            }
+          })
+        };
+
+        const data = await fetch(url, options)
+        const metadata = await data.json() as object
+        return metadata
+      } catch(err: any) {
+        Logger.error(err, loggerCtx)
+      }
     }
 
     /**

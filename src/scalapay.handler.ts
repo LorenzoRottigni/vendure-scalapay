@@ -12,11 +12,10 @@ import {
   RequestContext,
   Payment,
 } from '@vendure/core';
-import fetch from 'node-fetch'
 import { ScalapayService } from './scalapay.service';
 import type {
   PostV2OrdersResponse,
-  PostV2PaymentsCaptureResponse
+  PostV2PaymentsCaptureResponse,
 } from './types';
 import { loggerCtx } from './constants';
 
@@ -38,6 +37,7 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
     baseUrl: { type: 'string' },
     successUrl: { type: 'string' },
     failureUrl: { type: 'string' },
+    environment: { type: 'string' }
   },
   init(injector: Injector) {
     connection = injector.get(TransactionalConnection)
@@ -83,7 +83,6 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
 
       }
 
-      // extract ID from checkoutUrl (ex. https://portal.integration.scalapay.com/checkout/98DZ2E51FAYU)
       const chunks = metadata?.checkoutUrl?.split?.('/') || []
 
       return {
@@ -140,25 +139,7 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
   },
   createRefund: async (ctx, input, amount, order, payment, args): Promise<CreateRefundResult> => {
     try {
-      const url = 'https://integration.api.scalapay.com/v2/payments/refund';
-      const options = {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          Authorization: `Bearer ${args.apiKey}`
-        },
-        body: JSON.stringify({
-          refundAmount: {
-            currency: 'EUR',
-            amount: amount ? (amount / 100)?.toString() : '0'
-          }
-        })
-      };
-
-      const data = await fetch(url, options)
-      const metadata = await data.json() as object
-
+      const metadata = await scalapayService.refundPayment(amount)
       return {
         state: 'Settled',
         transactionId: payment.transactionId,

@@ -5,11 +5,17 @@ declare module '@vendure/core/dist/entity/custom-entity-fields' {
   }
 }
 
+export enum ScalapayEnvironment {
+  sandbox = 'sandbox',
+  production = 'production'
+}
+
 export declare interface ScalapayPluginOptions {
     apiKey: string
     baseUrl: string
     successUrl: string
     failureUrl: string
+    environment: ScalapayEnvironment
 }
 
 export declare interface ScalapayAmount {

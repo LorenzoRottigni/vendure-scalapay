@@ -9,7 +9,7 @@ import {
 } from './constants'
 import scalapayPaymentHandler from "./scalapay.handler";
 import { ScalapayService } from "./scalapay.service";
-import type { ScalapayPluginOptions } from "./types";
+import { ScalapayEnvironment, type ScalapayPluginOptions } from "./types";
 import { ScalapayController } from "./scalapay.controller";
 
 @VendurePlugin({
@@ -51,7 +51,13 @@ export class ScalapayPlugin {
       apiKey: process.env.SCALAPAY_API_KEY || options.apiKey,
       baseUrl: process.env.SCALAPAY_BASE_URL || options.baseUrl,
       successUrl: process.env.SCALAPAY_SUCCESS_URL || options.successUrl,
-      failureUrl: process.env.SCALAPAY_FAILURE_URL || options.failureUrl
+      failureUrl: process.env.SCALAPAY_FAILURE_URL || options.failureUrl,
+      environment: (
+        process.env.SCALAPAY_ENVIRONMENT === ScalapayEnvironment.sandbox ||
+        process.env.SCALAPAY_ENVIRONMENT === ScalapayEnvironment.production
+      )
+        ? process.env.SCALAPAY_ENVIRONMENT
+        : options.environment || 'sandbox'
     }
     return ScalapayPlugin;
   }
