@@ -14,7 +14,6 @@
     "build": "rimraf dist && tsc"
   },
   "dependencies": {
-    "@nestjs/common": "^10.2.4",
     "@types/node-fetch": "^2.6.4",
     "@vendure/core": "^2.0.6",
     "api": "^6.1.1",
