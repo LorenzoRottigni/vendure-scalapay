@@ -37,7 +37,7 @@ let ScalapayController = class ScalapayController {
             if (!settleStatus) {
                 return { url: errorUrl };
             }
-            return { url: `${successUrl}?order=${orderId}` };
+            return { url: `${successUrl.replace('<order-id>', orderId)}?order=${orderId}` };
         }
         catch (err) {
             core_1.Logger.error(err, constants_1.loggerCtx);
