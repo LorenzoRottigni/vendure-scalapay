@@ -31,8 +31,8 @@ export class ScalapayService {
         private entityHydratorService: EntityHydrator,
         @Inject(SCALAPAY_PLUGIN_OPTIONS) private options: ScalapayPluginOptions,
     ) {
-      Logger.debug('SCALAPAY PLUGIN OPTIONS:')
-      Logger.debug(JSON.stringify(this.options, null, 2))
+      Logger.info('SCALAPAY PLUGIN OPTIONS:')
+      Logger.info(JSON.stringify(this.options, null, 2))
     }
 
     /**
@@ -43,8 +43,7 @@ export class ScalapayService {
     public async createOrder(order: Order): Promise<PostV2OrdersResponse | null> {
         try {
           const sdk = api('@scalapaydocs/v1.1#4won2elk6oqe21') as ScalapaySDK
-          Logger.debug(`create order server: ${getScalapayUrl(this.options.environment)}`)
-          Logger.debug(`create order token: ${this.options.apiKey}`)
+
           sdk.server(getScalapayUrl(this.options.environment));
           sdk.auth(`Bearer ${this.options.apiKey}`)
 
