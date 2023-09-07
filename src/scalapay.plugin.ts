@@ -57,7 +57,7 @@ export class ScalapayPlugin {
         process.env.SCALAPAY_ENVIRONMENT === ScalapayEnvironment.production
       )
         ? process.env.SCALAPAY_ENVIRONMENT
-        : options.environment || 'sandbox'
+        : options.environment || ScalapayEnvironment.sandbox
     }
     return ScalapayPlugin;
   }
