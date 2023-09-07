@@ -47,7 +47,12 @@ export class ScalapayPlugin {
   static options: ScalapayPluginOptions
 
   static init(options: ScalapayPluginOptions): Type<ScalapayPlugin> {
-    this.options = options;
+    this.options = {
+      apiKey: process.env.SCALAPAY_API_KEY || options.apiKey,
+      baseUrl: process.env.SCALAPAY_BASE_URL || options.baseUrl,
+      successUrl: process.env.SCALAPAY_SUCCESS_URL || options.successUrl,
+      failureUrl: process.env.SCALAPAY_FAILURE_URL || options.failureUrl
+    }
     return ScalapayPlugin;
   }
 }
