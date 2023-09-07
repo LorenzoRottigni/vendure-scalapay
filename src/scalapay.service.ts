@@ -176,10 +176,10 @@ export class ScalapayService {
               currency: 'EUR'
             },
             name: productVariant?.name,
-            category: productVariant?.customFields?.primaryCategory?.name,
-            subcategory: productVariant?.customFields?.selectedCategory?.name,
+            // category: productVariant?.customFields?.primaryCategory?.name,
+            // subcategory: productVariant?.customFields?.selectedCategory?.name,
             sku: productVariant?.sku,
-            brand: productVariant?.customFields?.brand?.[0]?.name,
+            // brand: productVariant?.customFields?.brand?.[0]?.name,
           })),
           discounts: order?.discounts?.map(({ amountWithTax }) => ({
             displayName: `${amountWithTax}%off`,

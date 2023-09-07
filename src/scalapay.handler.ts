@@ -35,8 +35,9 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
   }],
   args: {
     apiKey: { type: 'string' },
-    cancelUrl: { type: 'string' },
-    confirmUrl: { type: 'string' },
+    baseUrl: { type: 'string' },
+    successUrl: { type: 'string' },
+    failureUrl: { type: 'string' },
   },
   init(injector: Injector) {
     connection = injector.get(TransactionalConnection)
