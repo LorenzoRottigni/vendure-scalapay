@@ -5,4 +5,4 @@ var ScalapayEnvironment;
 (function (ScalapayEnvironment) {
     ScalapayEnvironment["sandbox"] = "sandbox";
     ScalapayEnvironment["production"] = "production";
-})(ScalapayEnvironment || (exports.ScalapayEnvironment = ScalapayEnvironment = {}));
+})(ScalapayEnvironment = exports.ScalapayEnvironment || (exports.ScalapayEnvironment = {}));

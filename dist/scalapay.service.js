@@ -28,6 +28,8 @@ let ScalapayService = class ScalapayService {
         this.orderService = orderService;
         this.entityHydratorService = entityHydratorService;
         this.options = options;
+        core_1.Logger.debug('SCALAPAY PLUGIN OPTIONS:');
+        core_1.Logger.debug(JSON.stringify(this.options, null, 2));
     }
     /**
      * @description Create a new Scalapay Order.
@@ -37,6 +39,8 @@ let ScalapayService = class ScalapayService {
     async createOrder(order) {
         try {
             const sdk = (0, api_1.default)('@scalapaydocs/v1.1#4won2elk6oqe21');
+            core_1.Logger.debug(`create order server: ${(0, common_2.getScalapayUrl)(this.options.environment)}`);
+            core_1.Logger.debug(`create order token: ${this.options.apiKey}`);
             sdk.server((0, common_2.getScalapayUrl)(this.options.environment));
             sdk.auth(`Bearer ${this.options.apiKey}`);
             const payload = this.normalizeCreateOrderInput(order);
@@ -210,11 +214,11 @@ let ScalapayService = class ScalapayService {
         return payload;
     }
 };
-exports.ScalapayService = ScalapayService;
-exports.ScalapayService = ScalapayService = __decorate([
+ScalapayService = __decorate([
     (0, common_1.Injectable)(),
     __param(3, (0, common_1.Inject)(constants_1.SCALAPAY_PLUGIN_OPTIONS)),
     __metadata("design:paramtypes", [core_1.TransactionalConnection,
         core_1.OrderService,
         core_1.EntityHydrator, Object])
 ], ScalapayService);
+exports.ScalapayService = ScalapayService;

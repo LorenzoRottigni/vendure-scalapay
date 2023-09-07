@@ -32,8 +32,7 @@ let ScalapayPlugin = ScalapayPlugin_1 = class ScalapayPlugin {
         return ScalapayPlugin_1;
     }
 };
-exports.ScalapayPlugin = ScalapayPlugin;
-exports.ScalapayPlugin = ScalapayPlugin = ScalapayPlugin_1 = __decorate([
+ScalapayPlugin = ScalapayPlugin_1 = __decorate([
     (0, core_1.VendurePlugin)({
         imports: [core_1.PluginCommonModule],
         controllers: [scalapay_controller_1.ScalapayController],
@@ -41,7 +40,7 @@ exports.ScalapayPlugin = ScalapayPlugin = ScalapayPlugin_1 = __decorate([
             scalapay_service_1.ScalapayService,
             {
                 provide: constants_1.SCALAPAY_PLUGIN_OPTIONS,
-                useFactory: () => ScalapayPlugin.options,
+                useFactory: () => ScalapayPlugin_1.options,
             },
         ],
         configuration: config => {
@@ -66,3 +65,4 @@ exports.ScalapayPlugin = ScalapayPlugin = ScalapayPlugin_1 = __decorate([
         },
     })
 ], ScalapayPlugin);
+exports.ScalapayPlugin = ScalapayPlugin;

@@ -6,6 +6,14 @@
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "keywords": [
+    "vendure",
+    "scalapay",
+    "nestjs",
+    "typescript",
+    "payment-plugin"
+  ],
+  "private": false,
   "files": [
     "dist",
     "README.md"

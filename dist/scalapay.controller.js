@@ -45,7 +45,6 @@ let ScalapayController = class ScalapayController {
         }
     }
 };
-exports.ScalapayController = ScalapayController;
 __decorate([
     (0, common_1.Get)('scalapay'),
     (0, core_1.Transaction)(),
@@ -64,8 +63,9 @@ __decorate([
     __metadata("design:paramtypes", [core_1.RequestContext, String, String, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ScalapayController.prototype, "settlePayment", null);
-exports.ScalapayController = ScalapayController = __decorate([
+ScalapayController = __decorate([
     (0, common_1.Controller)('payments'),
     __param(1, (0, common_1.Inject)(constants_1.SCALAPAY_PLUGIN_OPTIONS)),
     __metadata("design:paramtypes", [scalapay_service_1.ScalapayService, Object])
 ], ScalapayController);
+exports.ScalapayController = ScalapayController;
