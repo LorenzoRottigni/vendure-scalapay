@@ -1,15 +1,19 @@
-import { Controller, Get, Query, Redirect } from '@nestjs/common';
+import { Controller, Get, Inject, Query, Redirect } from '@nestjs/common';
 import { Ctx, Logger, RequestContext, Transaction } from '@vendure/core';
-import { errorToString } from './common';
 import { ScalapayService } from './scalapay.service';
+import { SCALAPAY_PLUGIN_OPTIONS, loggerCtx } from './constants';
+import { ScalapayPluginOptions } from './types';
 
 @Controller('payments')
 export class ScalapayController {
-    constructor(private scalapayService: ScalapayService) {}
+    constructor(
+        private scalapayService: ScalapayService,
+        @Inject(SCALAPAY_PLUGIN_OPTIONS) private options: ScalapayPluginOptions
+    ) {}
 
     @Get('scalapay')
     @Transaction()
-    @Redirect('https://sandbox.deesup.com/thank-you', 302)
+    @Redirect(undefined, 302)
     /**
      * @description GET /payments/scalapay controller.
      * Handles the Scalapay confirm/cancel redirect after payment submission that occurs
@@ -20,7 +24,8 @@ export class ScalapayController {
         @Query('orderToken') orderToken: string,
         @Query('status') status: string,
         @Query('orderId') orderId: string,
-        errorUrl = 'https://sandbox.deesup.com/checkout?scalapayError=true'
+        successUrl = this.options.successUrl,
+        errorUrl = this.options.failureUrl
     ): Promise<void | { url?: string, statusCode?: number}> {
         try {
             if (!ctx.activeUserId || !orderId || !status || !orderToken) {
@@ -31,9 +36,9 @@ export class ScalapayController {
             if (!settleStatus) {
                 return { url: errorUrl }
             }
-            return { url: `https://sandbox.deesup.com/thank-you/${orderId}` }
-        } catch (err) {
-            Logger.error(errorToString(err));
+            return { url: `${successUrl}?order=${orderId}` }
+        } catch (err: any) {
+            Logger.error(err, loggerCtx);
             return { url: errorUrl }
         }
     }

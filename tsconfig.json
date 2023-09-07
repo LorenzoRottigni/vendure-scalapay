@@ -1,19 +1,20 @@
 {
   "compilerOptions": {
-    "lib": ["es2022"],
     "module": "commonjs",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es2022",
+    "strictPropertyInitialization": false,
+    "target": "es2019",
     "strict": true,
     "sourceMap": false,
     "skipLibCheck": true,
-    "types": ["jest", "node"],
-    "declaration": true,
-    "strictPropertyInitialization": false,
-    "outDir": "dist",
+    "outDir": "./dist",
+    "baseUrl": "./"
   },
-  "include": ["src/"],
+  "exclude": ["node_modules", "migration.ts"],
+  "ts-node": {
+    "files": true
+  }
 }

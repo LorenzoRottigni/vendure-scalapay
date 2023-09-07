@@ -11,7 +11,6 @@ import {
   OrderLine,
   EntityHydrator,
 } from "@vendure/core";
-import { errorToString } from "./common";
 import type {
   PostV2OrdersResponse,
   PostV2PaymentsCaptureResponse,
@@ -20,7 +19,7 @@ import type {
   ScalapayPluginOptions,
   ScalapaySDK
 } from "./types";
-import { SCALAPAY_PLUGIN_OPTIONS } from "./constants";
+import { SCALAPAY_PLUGIN_OPTIONS, loggerCtx } from "./constants";
 
 @Injectable()
 export class ScalapayService {
@@ -46,8 +45,8 @@ export class ScalapayService {
           const { data } = await sdk.postV2Orders(payload)
 
           return data
-        } catch(err) {
-          Logger.error(errorToString(err))
+        } catch(err: any) {
+          Logger.error(err)
           return null
         }
     }
@@ -97,8 +96,8 @@ export class ScalapayService {
           }
 
           return true
-        } catch(err) {
-          Logger.error(errorToString(err))
+        } catch(err: any) {
+          Logger.error(err, loggerCtx)
           return false
         }
     }
@@ -131,8 +130,8 @@ export class ScalapayService {
           } = await sdk.postV2PaymentsCapture(payload)
 
           return metadata
-        } catch(err) {
-          Logger.error(errorToString(err))
+        } catch(err: any) {
+          Logger.error(err, loggerCtx)
           return null
         }
     }
@@ -186,8 +185,8 @@ export class ScalapayService {
             displayName: `${amountWithTax}%off`,
           })),
           merchant: {
-            redirectCancelUrl: `${this.options?.cancelUrl}?orderId=${order?.id}`,
-            redirectConfirmUrl: `${this.options?.confirmUrl}?orderId=${order?.id}`,
+            redirectCancelUrl: `${this.options?.baseUrl}/payments/scalapay?orderId=${order?.id}`,
+            redirectConfirmUrl: `${this.options?.baseUrl}/payments/scalapay?orderId=${order?.id}`,
           },
           shippingAmount: undefined
         }

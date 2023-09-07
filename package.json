@@ -1,10 +1,18 @@
 {
   "name": "vendure-scalapay",
   "version": "1.0.0",
-  "main": "index.js",
   "repository": "git@github.com:LorenzoRottigni/vendure-scalapay.git",
   "author": "Lorenzo Rottigni <lorenzo@rottigni.tech>",
   "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc"
+  },
   "dependencies": {
     "@nestjs/common": "^10.2.4",
     "@types/node-fetch": "^2.6.4",

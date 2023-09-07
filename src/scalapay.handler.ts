@@ -12,13 +12,13 @@ import {
   RequestContext,
   Payment,
 } from '@vendure/core';
-import { errorToString } from './common';
 import fetch from 'node-fetch'
 import { ScalapayService } from './scalapay.service';
 import type {
   PostV2OrdersResponse,
   PostV2PaymentsCaptureResponse
 } from './types';
+import { loggerCtx } from './constants';
 
 let connection: TransactionalConnection
 let scalapayService: ScalapayService
@@ -68,8 +68,8 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
         try {
           order.customFields.scalapayCheckoutUrl = metadata.checkoutUrl
           await connection.getRepository(ctx, Order).save(order, { reload: false })
-        } catch(e) {
-          Logger.error(errorToString(e))
+        } catch(e: any) {
+          Logger.error(e, loggerCtx)
           return {
             amount: order.total,
             state: 'Declined' as const,
@@ -91,8 +91,8 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
         transactionId: chunks?.[chunks.length - 1] || undefined,
         metadata,
       };
-    } catch (err) {
-      Logger.error(errorToString(err))
+    } catch (err: any) {
+      Logger.error(err, loggerCtx)
       return {
         amount: order.total,
         state: 'Declined' as const,
@@ -128,12 +128,12 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
         success: metadata?.status?.toLowerCase?.() === 'approved',
         metadata,
       };
-    } catch (err) {
-      Logger.error(errorToString(err))
+    } catch (err: any) {
+      Logger.error(err, loggerCtx)
       return {
         success: false,
         state: 'Error',
-        errorMessage: errorToString(err),
+        errorMessage: err,
       } as SettlePaymentErrorResult
     }
   },
@@ -163,13 +163,13 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
         transactionId: payment.transactionId,
         metadata
        };
-    } catch (err) {
-      Logger.error(errorToString(err))
+    } catch (err: any) {
+      Logger.error(err, loggerCtx)
       return  {
         state: 'Failed',
         transactionId: '',
         metadata: {
-          error: errorToString(err)
+          error: err
         }
       }
     }

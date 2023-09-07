@@ -7,8 +7,9 @@ declare module '@vendure/core/dist/entity/custom-entity-fields' {
 
 export declare interface ScalapayPluginOptions {
     apiKey: string
-    confirmUrl: string
-    cancelUrl: string
+    baseUrl: string
+    successUrl: string
+    failureUrl: string
 }
 
 export declare interface ScalapayAmount {
