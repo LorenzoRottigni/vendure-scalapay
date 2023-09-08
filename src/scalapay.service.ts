@@ -221,7 +221,7 @@ export class ScalapayService {
       },
       billing: {
         phoneNumber: order?.billingAddress?.phoneNumber,
-        countryCode: order?.billingAddress?.country,
+        countryCode: order?.billingAddress?.countryCode?.toUpperCase(),
         name: order?.billingAddress?.fullName || fallbackName,
         postcode: order?.billingAddress?.postalCode,
         suburb: order?.billingAddress?.city,
@@ -229,7 +229,7 @@ export class ScalapayService {
       },
       shipping: {
         phoneNumber: order?.shippingAddress?.phoneNumber,
-        countryCode: order?.shippingAddress?.country,
+        countryCode: order?.shippingAddress?.countryCode?.toUpperCase(),
         name: order?.shippingAddress?.fullName || fallbackName,
         postcode: order?.shippingAddress?.postalCode,
         suburb: order?.shippingAddress?.city,

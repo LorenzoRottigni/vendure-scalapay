@@ -159,7 +159,7 @@ let ScalapayService = class ScalapayService {
      * @returns {ScalapayCreateOrderInput} Normalized request input.
      */
     normalizeCreateOrderInput(order) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2;
         const fallbackName = ((_a = order === null || order === void 0 ? void 0 : order.customer) === null || _a === void 0 ? void 0 : _a.firstName) || ((_b = order === null || order === void 0 ? void 0 : order.customer) === null || _b === void 0 ? void 0 : _b.lastName)
             ? `${(_c = order === null || order === void 0 ? void 0 : order.customer) === null || _c === void 0 ? void 0 : _c.firstName} ${(_d = order === null || order === void 0 ? void 0 : order.customer) === null || _d === void 0 ? void 0 : _d.lastName}`
             : undefined;
@@ -178,19 +178,19 @@ let ScalapayService = class ScalapayService {
             },
             billing: {
                 phoneNumber: (_k = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _k === void 0 ? void 0 : _k.phoneNumber,
-                countryCode: (_l = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _l === void 0 ? void 0 : _l.country,
-                name: ((_m = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _m === void 0 ? void 0 : _m.fullName) || fallbackName,
-                postcode: (_o = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _o === void 0 ? void 0 : _o.postalCode,
-                suburb: (_p = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _p === void 0 ? void 0 : _p.city,
-                line1: (_q = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _q === void 0 ? void 0 : _q.streetLine1,
+                countryCode: (_m = (_l = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _l === void 0 ? void 0 : _l.countryCode) === null || _m === void 0 ? void 0 : _m.toUpperCase(),
+                name: ((_o = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _o === void 0 ? void 0 : _o.fullName) || fallbackName,
+                postcode: (_p = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _p === void 0 ? void 0 : _p.postalCode,
+                suburb: (_q = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _q === void 0 ? void 0 : _q.city,
+                line1: (_r = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _r === void 0 ? void 0 : _r.streetLine1,
             },
             shipping: {
-                phoneNumber: (_r = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _r === void 0 ? void 0 : _r.phoneNumber,
-                countryCode: (_s = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _s === void 0 ? void 0 : _s.country,
-                name: ((_t = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _t === void 0 ? void 0 : _t.fullName) || fallbackName,
-                postcode: (_u = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _u === void 0 ? void 0 : _u.postalCode,
-                suburb: (_v = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _v === void 0 ? void 0 : _v.city,
-                line1: (_w = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _w === void 0 ? void 0 : _w.streetLine1,
+                phoneNumber: (_s = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _s === void 0 ? void 0 : _s.phoneNumber,
+                countryCode: (_u = (_t = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _t === void 0 ? void 0 : _t.countryCode) === null || _u === void 0 ? void 0 : _u.toUpperCase(),
+                name: ((_v = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _v === void 0 ? void 0 : _v.fullName) || fallbackName,
+                postcode: (_w = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _w === void 0 ? void 0 : _w.postalCode,
+                suburb: (_x = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _x === void 0 ? void 0 : _x.city,
+                line1: (_y = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _y === void 0 ? void 0 : _y.streetLine1,
             },
             items: order === null || order === void 0 ? void 0 : order.lines.map(({ quantity, linePriceWithTax, productVariant }) => {
                 var _a;
@@ -209,12 +209,12 @@ let ScalapayService = class ScalapayService {
                     // brand: productVariant?.customFields?.brand?.[0]?.name,
                 });
             }),
-            discounts: (_x = order === null || order === void 0 ? void 0 : order.discounts) === null || _x === void 0 ? void 0 : _x.map(({ amountWithTax }) => ({
+            discounts: (_z = order === null || order === void 0 ? void 0 : order.discounts) === null || _z === void 0 ? void 0 : _z.map(({ amountWithTax }) => ({
                 displayName: `${amountWithTax}%off`,
             })),
             merchant: {
-                redirectCancelUrl: `${(_y = this.options) === null || _y === void 0 ? void 0 : _y.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
-                redirectConfirmUrl: `${(_z = this.options) === null || _z === void 0 ? void 0 : _z.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
+                redirectCancelUrl: `${(_0 = this.options) === null || _0 === void 0 ? void 0 : _0.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
+                redirectConfirmUrl: `${(_1 = this.options) === null || _1 === void 0 ? void 0 : _1.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
             },
             shippingAmount: undefined,
         };
@@ -222,7 +222,7 @@ let ScalapayService = class ScalapayService {
         if (order.shippingWithTax) {
             payload.shippingAmount = {
                 amount: (order === null || order === void 0 ? void 0 : order.shippingWithTax)
-                    ? (_0 = ((order === null || order === void 0 ? void 0 : order.shippingWithTax) / 100)) === null || _0 === void 0 ? void 0 : _0.toString()
+                    ? (_2 = ((order === null || order === void 0 ? void 0 : order.shippingWithTax) / 100)) === null || _2 === void 0 ? void 0 : _2.toString()
                     : "0",
                 currency: "EUR",
             };
