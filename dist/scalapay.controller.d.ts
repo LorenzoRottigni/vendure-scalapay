@@ -1,6 +1,6 @@
-import { RequestContext } from '@vendure/core';
-import { ScalapayService } from './scalapay.service';
-import { ScalapayPluginOptions } from './types';
+import { RequestContext } from "@vendure/core";
+import { ScalapayService } from "./scalapay.service";
+import { ScalapayPluginOptions } from "./types";
 export declare class ScalapayController {
     private scalapayService;
     private options;

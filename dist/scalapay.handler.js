@@ -6,21 +6,23 @@ const constants_1 = require("./constants");
 let connection;
 let scalapayService;
 const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
-    code: 'scalapay',
-    description: [{
+    code: "scalapay",
+    description: [
+        {
             languageCode: core_1.LanguageCode.en,
-            value: 'Scalapay',
+            value: "Scalapay",
         },
         {
             languageCode: core_1.LanguageCode.it,
-            value: 'Scalapay',
-        }],
+            value: "Scalapay",
+        },
+    ],
     args: {
-        apiKey: { type: 'string' },
-        baseUrl: { type: 'string' },
-        successUrl: { type: 'string' },
-        failureUrl: { type: 'string' },
-        environment: { type: 'string' }
+        apiKey: { type: "string" },
+        baseUrl: { type: "string" },
+        successUrl: { type: "string" },
+        failureUrl: { type: "string" },
+        environment: { type: "string" },
     },
     init(injector) {
         connection = injector.get(core_1.TransactionalConnection);
@@ -36,13 +38,13 @@ const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
     createPayment: async (ctx, order) => {
         var _a, _b;
         try {
-            const metadata = (await scalapayService.createOrder(order));
+            const metadata = await scalapayService.createOrder(order);
             if (!metadata) {
                 return {
                     amount: order.total,
-                    state: 'Declined',
+                    state: "Declined",
                     metadata: {
-                        errorMessage: 'An error occurred while trying to retrieve the customer checkoutUrl.',
+                        errorMessage: "An error occurred while trying to retrieve the customer checkoutUrl.",
                     },
                 };
             }
@@ -50,24 +52,26 @@ const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
             if (metadata === null || metadata === void 0 ? void 0 : metadata.checkoutUrl) {
                 try {
                     order.customFields.scalapayCheckoutUrl = metadata.checkoutUrl;
-                    await connection.getRepository(ctx, core_1.Order).save(order, { reload: false });
+                    await connection
+                        .getRepository(ctx, core_1.Order)
+                        .save(order, { reload: false });
                 }
                 catch (e) {
                     core_1.Logger.error(e, constants_1.loggerCtx);
                     return {
                         amount: order.total,
-                        state: 'Declined',
+                        state: "Declined",
                         metadata: {
                             errorMessage: e,
-                            message: 'Unable to set order.customFields.checkoutUrl'
+                            message: "Unable to set order.customFields.checkoutUrl",
                         },
                     };
                 }
             }
-            const chunks = ((_b = (_a = metadata === null || metadata === void 0 ? void 0 : metadata.checkoutUrl) === null || _a === void 0 ? void 0 : _a.split) === null || _b === void 0 ? void 0 : _b.call(_a, '/')) || [];
+            const chunks = ((_b = (_a = metadata === null || metadata === void 0 ? void 0 : metadata.checkoutUrl) === null || _a === void 0 ? void 0 : _a.split) === null || _b === void 0 ? void 0 : _b.call(_a, "/")) || [];
             return {
                 amount: order.total,
-                state: 'Authorized',
+                state: "Authorized",
                 transactionId: (chunks === null || chunks === void 0 ? void 0 : chunks[chunks.length - 1]) || undefined,
                 metadata,
             };
@@ -76,7 +80,7 @@ const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
             core_1.Logger.error(err, constants_1.loggerCtx);
             return {
                 amount: order.total,
-                state: 'Declined',
+                state: "Declined",
                 metadata: {
                     errorMessage: err,
                 },
@@ -98,13 +102,15 @@ const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
             if (!token) {
                 return {
                     success: false,
-                    state: 'Error',
+                    state: "Error",
                     errorMessage: `An error occurred while trying to retrieve Scalapay capture token within order ${order === null || order === void 0 ? void 0 : order.id}`,
                 };
             }
-            const metadata = (await scalapayService.capturePayment(payment, token)) || { status: 'DECLINED' };
+            const metadata = (await scalapayService.capturePayment(payment, token)) || {
+                status: "DECLINED",
+            };
             return {
-                success: ((_c = (_b = metadata === null || metadata === void 0 ? void 0 : metadata.status) === null || _b === void 0 ? void 0 : _b.toLowerCase) === null || _c === void 0 ? void 0 : _c.call(_b)) === 'approved',
+                success: ((_c = (_b = metadata === null || metadata === void 0 ? void 0 : metadata.status) === null || _b === void 0 ? void 0 : _b.toLowerCase) === null || _c === void 0 ? void 0 : _c.call(_b)) === "approved",
                 metadata,
             };
         }
@@ -112,7 +118,7 @@ const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
             core_1.Logger.error(err, constants_1.loggerCtx);
             return {
                 success: false,
-                state: 'Error',
+                state: "Error",
                 errorMessage: err,
             };
         }
@@ -121,19 +127,19 @@ const scalapayPaymentHandler = new core_1.PaymentMethodHandler({
         try {
             const metadata = await scalapayService.refundPayment(amount);
             return {
-                state: 'Settled',
+                state: "Settled",
                 transactionId: payment.transactionId,
-                metadata
+                metadata,
             };
         }
         catch (err) {
             core_1.Logger.error(err, constants_1.loggerCtx);
             return {
-                state: 'Failed',
-                transactionId: '',
+                state: "Failed",
+                transactionId: "",
                 metadata: {
-                    error: err
-                }
+                    error: err,
+                },
             };
         }
     },

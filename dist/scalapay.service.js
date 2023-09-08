@@ -28,7 +28,7 @@ let ScalapayService = class ScalapayService {
         this.orderService = orderService;
         this.entityHydratorService = entityHydratorService;
         this.options = options;
-        core_1.Logger.info('SCALAPAY PLUGIN OPTIONS:');
+        core_1.Logger.info("SCALAPAY PLUGIN OPTIONS:");
         core_1.Logger.info(JSON.stringify(this.options, null, 2));
     }
     /**
@@ -38,7 +38,7 @@ let ScalapayService = class ScalapayService {
      */
     async createOrder(order) {
         try {
-            const sdk = (0, api_1.default)('@scalapaydocs/v1.1#4won2elk6oqe21');
+            const sdk = (0, api_1.default)("@scalapaydocs/v1.1#4won2elk6oqe21");
             sdk.server((0, common_2.getScalapayUrl)(this.options.environment));
             sdk.auth(`Bearer ${this.options.apiKey}`);
             const payload = this.normalizeCreateOrderInput(order);
@@ -58,7 +58,7 @@ let ScalapayService = class ScalapayService {
      * @param {string} orderToken Query param from Scalapay confirmation redirect.
      * @returns {Promise<boolean>} Settle status
      */
-    async settlePayment(ctx, orderStatus, orderId, orderToken, fallbackState = 'AddingItems') {
+    async settlePayment(ctx, orderStatus, orderId, orderToken, fallbackState = "AddingItems") {
         var _a, _b;
         try {
             const order = await this.orderService.findOne(ctx, orderId, ["payments"]);
@@ -67,19 +67,26 @@ let ScalapayService = class ScalapayService {
                 await this.orderService.transitionToState(ctx, orderId, fallbackState);
                 return false;
             }
-            const scalapayPayments = ((_b = (_a = order === null || order === void 0 ? void 0 : order.payments) === null || _a === void 0 ? void 0 : _a.filter) === null || _b === void 0 ? void 0 : _b.call(_a, (payment) => { var _a; return ((_a = payment === null || payment === void 0 ? void 0 : payment.method) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === 'scalapay'; })) || [];
+            const scalapayPayments = ((_b = (_a = order === null || order === void 0 ? void 0 : order.payments) === null || _a === void 0 ? void 0 : _a.filter) === null || _b === void 0 ? void 0 : _b.call(_a, (payment) => { var _a; return ((_a = payment === null || payment === void 0 ? void 0 : payment.method) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "scalapay"; })) || [];
             if (scalapayPayments.length === 0) {
                 core_1.Logger.error(`An error occurred while trying to retrieve Scalapay payments from order ${orderId}.`);
                 await this.orderService.transitionToState(ctx, orderId, fallbackState);
                 return false;
             }
             order.customFields.scalapayToken = orderToken;
-            await this.entityHydratorService.hydrate(ctx, order, { relations: ['lines'] });
-            await this.connection.getRepository(ctx, core_1.Order).save(order, { reload: false });
+            await this.entityHydratorService.hydrate(ctx, order, {
+                relations: ["lines"],
+            });
+            await this.connection
+                .getRepository(ctx, core_1.Order)
+                .save(order, { reload: false });
             for (const payment of scalapayPayments) {
-                await this.orderService.settlePayment(ctx, payment.id);
+                const result = await this.orderService.settlePayment(ctx, payment.id);
+                if (result.message) {
+                    throw Error(`Error settling payment ${payment.id} for order ${order.code}: ${result.errorCode} - ${result.message}`);
+                }
             }
-            if ((orderStatus === null || orderStatus === void 0 ? void 0 : orderStatus.toLowerCase()) !== 'success') {
+            if ((orderStatus === null || orderStatus === void 0 ? void 0 : orderStatus.toLowerCase()) !== "success") {
                 core_1.Logger.error(`An error occurred while trying to settle the Scalapay payment for order ${orderId}.`);
                 await this.orderService.transitionToState(ctx, orderId, fallbackState);
                 return false;
@@ -100,17 +107,19 @@ let ScalapayService = class ScalapayService {
     async capturePayment(payment, token) {
         var _a;
         try {
-            const sdk = (0, api_1.default)('@scalapaydocs/v1.1#tfpblg5few2e');
+            const sdk = (0, api_1.default)("@scalapaydocs/v1.1#tfpblg5few2e");
             sdk.server((0, common_2.getScalapayUrl)(this.options.environment));
             sdk.auth(`Bearer ${this.options.apiKey}`);
             const payload = {
                 amount: {
-                    amount: (payment === null || payment === void 0 ? void 0 : payment.amount) ? (_a = (payment.amount / 100)) === null || _a === void 0 ? void 0 : _a.toString() : undefined,
-                    currency: 'EUR'
+                    amount: (payment === null || payment === void 0 ? void 0 : payment.amount)
+                        ? (_a = (payment.amount / 100)) === null || _a === void 0 ? void 0 : _a.toString()
+                        : undefined,
+                    currency: "EUR",
                 },
-                token
+                token,
             };
-            const { data: metadata } = await sdk.postV2PaymentsCapture(payload);
+            const { data: metadata, } = await sdk.postV2PaymentsCapture(payload);
             return metadata;
         }
         catch (err) {
@@ -123,21 +132,21 @@ let ScalapayService = class ScalapayService {
         try {
             const url = `${(0, common_2.getScalapayUrl)(this.options.environment)}/v2/payments/refund`;
             const options = {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    accept: 'application/json',
-                    'content-type': 'application/json',
-                    Authorization: `Bearer ${this.options.apiKey}`
+                    accept: "application/json",
+                    "content-type": "application/json",
+                    Authorization: `Bearer ${this.options.apiKey}`,
                 },
                 body: JSON.stringify({
                     refundAmount: {
-                        currency: 'EUR',
-                        amount: amount ? (_a = (amount / 100)) === null || _a === void 0 ? void 0 : _a.toString() : '0'
-                    }
-                })
+                        currency: "EUR",
+                        amount: amount ? (_a = (amount / 100)) === null || _a === void 0 ? void 0 : _a.toString() : "0",
+                    },
+                }),
             };
             const data = await (0, node_fetch_1.default)(url, options);
-            const metadata = await data.json();
+            const metadata = (await data.json());
             return metadata;
         }
         catch (err) {
@@ -150,41 +159,48 @@ let ScalapayService = class ScalapayService {
      * @returns {ScalapayCreateOrderInput} Normalized request input.
      */
     normalizeCreateOrderInput(order) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+        const fallbackName = ((_a = order === null || order === void 0 ? void 0 : order.customer) === null || _a === void 0 ? void 0 : _a.firstName) || ((_b = order === null || order === void 0 ? void 0 : order.customer) === null || _b === void 0 ? void 0 : _b.lastName)
+            ? `${(_c = order === null || order === void 0 ? void 0 : order.customer) === null || _c === void 0 ? void 0 : _c.firstName} ${(_d = order === null || order === void 0 ? void 0 : order.customer) === null || _d === void 0 ? void 0 : _d.lastName}`
+            : undefined;
         const payload = {
             totalAmount: {
-                amount: (order === null || order === void 0 ? void 0 : order.totalWithTax) ? (_a = ((order === null || order === void 0 ? void 0 : order.totalWithTax) / 100)) === null || _a === void 0 ? void 0 : _a.toString() : '0',
-                currency: 'EUR'
+                amount: (order === null || order === void 0 ? void 0 : order.totalWithTax)
+                    ? (_e = ((order === null || order === void 0 ? void 0 : order.totalWithTax) / 100)) === null || _e === void 0 ? void 0 : _e.toString()
+                    : "0",
+                currency: "EUR",
             },
             consumer: {
-                phoneNumber: (_b = order === null || order === void 0 ? void 0 : order.customer) === null || _b === void 0 ? void 0 : _b.phoneNumber,
-                givenNames: (_c = order === null || order === void 0 ? void 0 : order.customer) === null || _c === void 0 ? void 0 : _c.firstName,
-                surname: (_d = order === null || order === void 0 ? void 0 : order.customer) === null || _d === void 0 ? void 0 : _d.lastName,
-                email: (_e = order === null || order === void 0 ? void 0 : order.customer) === null || _e === void 0 ? void 0 : _e.emailAddress,
+                phoneNumber: (_f = order === null || order === void 0 ? void 0 : order.customer) === null || _f === void 0 ? void 0 : _f.phoneNumber,
+                givenNames: (_g = order === null || order === void 0 ? void 0 : order.customer) === null || _g === void 0 ? void 0 : _g.firstName,
+                surname: (_h = order === null || order === void 0 ? void 0 : order.customer) === null || _h === void 0 ? void 0 : _h.lastName,
+                email: (_j = order === null || order === void 0 ? void 0 : order.customer) === null || _j === void 0 ? void 0 : _j.emailAddress,
             },
             billing: {
-                phoneNumber: (_f = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _f === void 0 ? void 0 : _f.phoneNumber,
-                countryCode: (_g = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _g === void 0 ? void 0 : _g.countryCode,
-                name: (_h = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _h === void 0 ? void 0 : _h.fullName,
-                postcode: (_j = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _j === void 0 ? void 0 : _j.postalCode,
-                suburb: (_k = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _k === void 0 ? void 0 : _k.city,
-                line1: (_l = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _l === void 0 ? void 0 : _l.streetLine1,
+                phoneNumber: (_k = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _k === void 0 ? void 0 : _k.phoneNumber,
+                countryCode: (_l = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _l === void 0 ? void 0 : _l.country,
+                name: ((_m = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _m === void 0 ? void 0 : _m.fullName) || fallbackName,
+                postcode: (_o = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _o === void 0 ? void 0 : _o.postalCode,
+                suburb: (_p = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _p === void 0 ? void 0 : _p.city,
+                line1: (_q = order === null || order === void 0 ? void 0 : order.billingAddress) === null || _q === void 0 ? void 0 : _q.streetLine1,
             },
             shipping: {
-                phoneNumber: (_m = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _m === void 0 ? void 0 : _m.phoneNumber,
-                countryCode: (_o = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _o === void 0 ? void 0 : _o.countryCode,
-                name: (_p = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _p === void 0 ? void 0 : _p.fullName,
-                postcode: (_q = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _q === void 0 ? void 0 : _q.postalCode,
-                suburb: (_r = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _r === void 0 ? void 0 : _r.city,
-                line1: (_s = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _s === void 0 ? void 0 : _s.streetLine1,
+                phoneNumber: (_r = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _r === void 0 ? void 0 : _r.phoneNumber,
+                countryCode: (_s = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _s === void 0 ? void 0 : _s.country,
+                name: ((_t = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _t === void 0 ? void 0 : _t.fullName) || fallbackName,
+                postcode: (_u = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _u === void 0 ? void 0 : _u.postalCode,
+                suburb: (_v = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _v === void 0 ? void 0 : _v.city,
+                line1: (_w = order === null || order === void 0 ? void 0 : order.shippingAddress) === null || _w === void 0 ? void 0 : _w.streetLine1,
             },
             items: order === null || order === void 0 ? void 0 : order.lines.map(({ quantity, linePriceWithTax, productVariant }) => {
                 var _a;
                 return ({
                     quantity,
                     price: {
-                        amount: linePriceWithTax ? (_a = (linePriceWithTax / 100)) === null || _a === void 0 ? void 0 : _a.toString() : '0',
-                        currency: 'EUR'
+                        amount: linePriceWithTax
+                            ? (_a = (linePriceWithTax / 100)) === null || _a === void 0 ? void 0 : _a.toString()
+                            : "0",
+                        currency: "EUR",
                     },
                     name: productVariant === null || productVariant === void 0 ? void 0 : productVariant.name,
                     // category: productVariant?.customFields?.primaryCategory?.name,
@@ -193,20 +209,22 @@ let ScalapayService = class ScalapayService {
                     // brand: productVariant?.customFields?.brand?.[0]?.name,
                 });
             }),
-            discounts: (_t = order === null || order === void 0 ? void 0 : order.discounts) === null || _t === void 0 ? void 0 : _t.map(({ amountWithTax }) => ({
+            discounts: (_x = order === null || order === void 0 ? void 0 : order.discounts) === null || _x === void 0 ? void 0 : _x.map(({ amountWithTax }) => ({
                 displayName: `${amountWithTax}%off`,
             })),
             merchant: {
-                redirectCancelUrl: `${(_u = this.options) === null || _u === void 0 ? void 0 : _u.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
-                redirectConfirmUrl: `${(_v = this.options) === null || _v === void 0 ? void 0 : _v.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
+                redirectCancelUrl: `${(_y = this.options) === null || _y === void 0 ? void 0 : _y.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
+                redirectConfirmUrl: `${(_z = this.options) === null || _z === void 0 ? void 0 : _z.baseUrl}/payments/scalapay?orderId=${order === null || order === void 0 ? void 0 : order.id}`,
             },
-            shippingAmount: undefined
+            shippingAmount: undefined,
         };
         // fill shipping amount if not free
         if (order.shippingWithTax) {
             payload.shippingAmount = {
-                amount: (order === null || order === void 0 ? void 0 : order.shippingWithTax) ? (_w = ((order === null || order === void 0 ? void 0 : order.shippingWithTax) / 100)) === null || _w === void 0 ? void 0 : _w.toString() : '0',
-                currency: 'EUR',
+                amount: (order === null || order === void 0 ? void 0 : order.shippingWithTax)
+                    ? (_0 = ((order === null || order === void 0 ? void 0 : order.shippingWithTax) / 100)) === null || _0 === void 0 ? void 0 : _0.toString()
+                    : "0",
+                currency: "EUR",
             };
         }
         return payload;

@@ -1,4 +1,4 @@
-import { PaymentMethodHandler } from '@vendure/core';
+import { PaymentMethodHandler } from "@vendure/core";
 declare const scalapayPaymentHandler: PaymentMethodHandler<{
     apiKey: {
         type: "string";

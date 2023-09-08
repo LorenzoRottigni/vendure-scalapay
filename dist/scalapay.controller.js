@@ -37,7 +37,9 @@ let ScalapayController = class ScalapayController {
             if (!settleStatus) {
                 return { url: errorUrl };
             }
-            return { url: `${successUrl.replace('<order-id>', orderId)}?order=${orderId}` };
+            return {
+                url: `${successUrl.replace("<order-id>", orderId)}?order=${orderId}`,
+            };
         }
         catch (err) {
             core_1.Logger.error(err, constants_1.loggerCtx);
@@ -46,7 +48,7 @@ let ScalapayController = class ScalapayController {
     }
 };
 __decorate([
-    (0, common_1.Get)('scalapay'),
+    (0, common_1.Get)("scalapay"),
     (0, core_1.Transaction)(),
     (0, common_1.Redirect)(undefined, 302)
     /**
@@ -56,15 +58,15 @@ __decorate([
      */
     ,
     __param(0, (0, core_1.Ctx)()),
-    __param(1, (0, common_1.Query)('orderToken')),
-    __param(2, (0, common_1.Query)('status')),
-    __param(3, (0, common_1.Query)('orderId')),
+    __param(1, (0, common_1.Query)("orderToken")),
+    __param(2, (0, common_1.Query)("status")),
+    __param(3, (0, common_1.Query)("orderId")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [core_1.RequestContext, String, String, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ScalapayController.prototype, "settlePayment", null);
 ScalapayController = __decorate([
-    (0, common_1.Controller)('payments'),
+    (0, common_1.Controller)("payments"),
     __param(1, (0, common_1.Inject)(constants_1.SCALAPAY_PLUGIN_OPTIONS)),
     __metadata("design:paramtypes", [scalapay_service_1.ScalapayService, Object])
 ], ScalapayController);

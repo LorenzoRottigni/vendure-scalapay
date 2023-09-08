@@ -24,10 +24,10 @@ let ScalapayPlugin = ScalapayPlugin_1 = class ScalapayPlugin {
             baseUrl: process.env.SCALAPAY_BASE_URL || options.baseUrl,
             successUrl: process.env.SCALAPAY_SUCCESS_URL || options.successUrl,
             failureUrl: process.env.SCALAPAY_FAILURE_URL || options.failureUrl,
-            environment: (process.env.SCALAPAY_ENVIRONMENT === types_1.ScalapayEnvironment.sandbox ||
-                process.env.SCALAPAY_ENVIRONMENT === types_1.ScalapayEnvironment.production)
+            environment: process.env.SCALAPAY_ENVIRONMENT === types_1.ScalapayEnvironment.sandbox ||
+                process.env.SCALAPAY_ENVIRONMENT === types_1.ScalapayEnvironment.production
                 ? process.env.SCALAPAY_ENVIRONMENT
-                : options.environment || types_1.ScalapayEnvironment.sandbox
+                : options.environment || types_1.ScalapayEnvironment.sandbox,
         };
         return ScalapayPlugin_1;
     }
@@ -43,20 +43,22 @@ ScalapayPlugin = ScalapayPlugin_1 = __decorate([
                 useFactory: () => ScalapayPlugin_1.options,
             },
         ],
-        configuration: config => {
+        configuration: (config) => {
             config.paymentOptions.paymentMethodHandlers.push(scalapay_handler_1.default);
             config.customFields.Order.push({
-                name: 'scalapayCheckoutUrl',
-                type: 'string',
-                label: [{ languageCode: core_1.LanguageCode.en, value: 'Scalapay checkout url' }],
+                name: "scalapayCheckoutUrl",
+                type: "string",
+                label: [
+                    { languageCode: core_1.LanguageCode.en, value: "Scalapay checkout url" },
+                ],
                 nullable: true,
                 public: true,
                 readonly: true,
             });
             config.customFields.Order.push({
-                name: 'scalapayToken',
-                type: 'string',
-                label: [{ languageCode: core_1.LanguageCode.en, value: 'Scalapay token' }],
+                name: "scalapayToken",
+                type: "string",
+                label: [{ languageCode: core_1.LanguageCode.en, value: "Scalapay token" }],
                 nullable: true,
                 public: true,
                 readonly: true,
