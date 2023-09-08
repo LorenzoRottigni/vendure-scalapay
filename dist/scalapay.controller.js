@@ -29,7 +29,7 @@ let ScalapayController = class ScalapayController {
      */
     async settlePayment(ctx, orderToken, status, orderId, successUrl = this.options.successUrl, errorUrl = this.options.failureUrl) {
         try {
-            if (!ctx.activeUserId || !orderId || !status || !orderToken) {
+            if (!orderId || !status || !orderToken) {
                 core_1.Logger.error(`Unable to settle Scalapay payment due to bad request.`);
                 return { url: errorUrl };
             }

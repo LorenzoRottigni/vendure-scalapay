@@ -28,7 +28,7 @@ export class ScalapayController {
     errorUrl = this.options.failureUrl,
   ): Promise<void | { url?: string; statusCode?: number }> {
     try {
-      if (!ctx.activeUserId || !orderId || !status || !orderToken) {
+      if (!orderId || !status || !orderToken) {
         Logger.error(`Unable to settle Scalapay payment due to bad request.`);
         return { url: errorUrl };
       }
