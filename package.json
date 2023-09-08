@@ -1,6 +1,6 @@
 {
   "name": "vendure-scalapay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": "git@github.com:LorenzoRottigni/vendure-scalapay.git",
   "author": "Lorenzo Rottigni <lorenzo@rottigni.tech>",
   "license": "MIT",
