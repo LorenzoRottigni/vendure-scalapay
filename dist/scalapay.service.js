@@ -61,6 +61,11 @@ let ScalapayService = class ScalapayService {
     async settlePayment(ctx, orderStatus, orderId, orderToken, fallbackState = "AddingItems") {
         var _a, _b;
         try {
+            if ((orderStatus === null || orderStatus === void 0 ? void 0 : orderStatus.toLowerCase()) !== "success") {
+                core_1.Logger.error(`An error occurred while trying to settle the Scalapay payment for order ${orderId}.`);
+                await this.orderService.transitionToState(ctx, orderId, fallbackState);
+                return false;
+            }
             const order = await this.orderService.findOne(ctx, orderId, ["payments"]);
             if (!order) {
                 core_1.Logger.error(`An error occurred while trying to retrieve order ${orderId}.`);
@@ -80,18 +85,20 @@ let ScalapayService = class ScalapayService {
             await this.connection
                 .getRepository(ctx, core_1.Order)
                 .save(order, { reload: false });
-            for (const payment of scalapayPayments) {
-                const result = await this.orderService.settlePayment(ctx, payment.id);
-                if (result.message) {
-                    throw Error(`Error settling payment ${payment.id} for order ${order.code}: ${result.errorCode} - ${result.message}`);
+            const settledPayments = await Promise.all(scalapayPayments.map(async (payment) => {
+                try {
+                    const result = await this.orderService.settlePayment(ctx, payment.id);
+                    if (result.message) {
+                        throw Error(`Error settling payment ${payment.id} for order ${order.code}: ${result.errorCode} - ${result.message}`);
+                    }
+                    return result;
                 }
-            }
-            if ((orderStatus === null || orderStatus === void 0 ? void 0 : orderStatus.toLowerCase()) !== "success") {
-                core_1.Logger.error(`An error occurred while trying to settle the Scalapay payment for order ${orderId}.`);
-                await this.orderService.transitionToState(ctx, orderId, fallbackState);
-                return false;
-            }
-            return true;
+                catch (err) {
+                    core_1.Logger.error(err, constants_1.loggerCtx);
+                    return null;
+                }
+            }));
+            return !settledPayments.includes(null);
         }
         catch (err) {
             core_1.Logger.error(err, constants_1.loggerCtx);

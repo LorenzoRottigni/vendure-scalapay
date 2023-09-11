@@ -74,7 +74,16 @@ export class ScalapayService {
     fallbackState: OrderState = "AddingItems",
   ): Promise<boolean> {
     try {
+      if (orderStatus?.toLowerCase() !== "success") {
+        Logger.error(
+          `An error occurred while trying to settle the Scalapay payment for order ${orderId}.`,
+        );
+        await this.orderService.transitionToState(ctx, orderId, fallbackState);
+        return false;
+      }
+
       const order = await this.orderService.findOne(ctx, orderId, ["payments"]);
+
       if (!order) {
         Logger.error(
           `An error occurred while trying to retrieve order ${orderId}.`,
@@ -87,6 +96,7 @@ export class ScalapayService {
         order?.payments?.filter?.(
           (payment) => payment?.method?.toLowerCase() === "scalapay",
         ) || [];
+
       if (scalapayPayments.length === 0) {
         Logger.error(
           `An error occurred while trying to retrieve Scalapay payments from order ${orderId}.`,
@@ -96,34 +106,38 @@ export class ScalapayService {
       }
 
       order.customFields.scalapayToken = orderToken;
+
       await this.entityHydratorService.hydrate(ctx, order, {
         relations: ["lines"],
       });
+
       await this.connection
         .getRepository(ctx, Order)
         .save(order, { reload: false });
 
-      for (const payment of scalapayPayments) {
-        const result = await this.orderService.settlePayment(ctx, payment.id);
+      
+      const settledPayments = await Promise.all(
+        scalapayPayments.map(
+          async (payment) => {
+            try {
+              const result = await this.orderService.settlePayment(ctx, payment.id)
+              if ((result as ErrorResult).message) {
+                throw Error(
+                  `Error settling payment ${payment.id} for order ${order.code}: ${
+                      (result as ErrorResult).errorCode
+                  } - ${(result as ErrorResult).message}`,
+                );
+              }
+              return result
+            } catch(err: any) {
+              Logger.error(err, loggerCtx)
+              return null
+            }
+          }
+        )
+      )
 
-        if ((result as ErrorResult).message) {
-          throw Error(
-              `Error settling payment ${payment.id} for order ${order.code}: ${
-                  (result as ErrorResult).errorCode
-              } - ${(result as ErrorResult).message}`,
-          );
-        }
-      }
-
-      if (orderStatus?.toLowerCase() !== "success") {
-        Logger.error(
-          `An error occurred while trying to settle the Scalapay payment for order ${orderId}.`,
-        );
-        await this.orderService.transitionToState(ctx, orderId, fallbackState);
-        return false;
-      }
-
-      return true;
+      return !settledPayments.includes(null);
     } catch (err: any) {
       Logger.error(err, loggerCtx);
       return false;
