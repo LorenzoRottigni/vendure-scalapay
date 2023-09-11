@@ -28,9 +28,12 @@ let ScalapayController = class ScalapayController {
      * on Scalapay checkoutUrl (generated at scalapay.handler.createPayment()).
      */
     async settlePayment(ctx, orderToken, status, orderId, successUrl = this.options.successUrl, errorUrl = this.options.failureUrl) {
+        var _a, _b;
         try {
-            if (!orderId || !status || !orderToken) {
-                core_1.Logger.error(`Unable to settle Scalapay payment due to bad request.`);
+            if (!orderId || !status || !orderToken || !((_a = ctx.session) === null || _a === void 0 ? void 0 : _a.id)) {
+                !((_b = ctx.session) === null || _b === void 0 ? void 0 : _b.id)
+                    ? core_1.Logger.error(`Unable to retrieve current session within received request.`)
+                    : core_1.Logger.error(`Unable to settle Scalapay payment due to bad request.`);
                 return { url: errorUrl };
             }
             const settleStatus = await this.scalapayService.settlePayment(ctx, status, orderId, orderToken);

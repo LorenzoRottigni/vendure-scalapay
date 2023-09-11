@@ -28,8 +28,10 @@ export class ScalapayController {
     errorUrl = this.options.failureUrl,
   ): Promise<void | { url?: string; statusCode?: number }> {
     try {
-      if (!orderId || !status || !orderToken) {
-        Logger.error(`Unable to settle Scalapay payment due to bad request.`);
+      if (!orderId || !status || !orderToken || !ctx.session?.id) {
+        !ctx.session?.id
+          ? Logger.error(`Unable to retrieve current session within received request.`)
+          : Logger.error(`Unable to settle Scalapay payment due to bad request.`);
         return { url: errorUrl };
       }
       const settleStatus = await this.scalapayService.settlePayment(
