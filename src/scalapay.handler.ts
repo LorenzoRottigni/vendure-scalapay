@@ -95,7 +95,8 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
 
       return {
         amount: order.total,
-        state: "Authorized" as const,
+        // state: "Authorized" => Troubles whenever user intentionally close scalapayCheckoutUrl.
+        state: "Created",
         transactionId: chunks?.[chunks.length - 1] || undefined,
         metadata,
       };
