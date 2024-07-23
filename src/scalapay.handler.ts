@@ -11,6 +11,7 @@ import {
   Order,
   RequestContext,
   Payment,
+  PaymentMetadata,
 } from "@vendure/core";
 import { ScalapayService } from "./scalapay.service";
 import type {
@@ -45,22 +46,28 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
     connection = injector.get(TransactionalConnection);
     scalapayService = injector.get(ScalapayService);
   },
+
   /**
-   * @description Triggers on addPaymentToOrder: create a new Scalapay payment intent trough ScalapaySDK.
-   * Injects a checkoutUrl at order.customFields.scalapayCheckoutUrl in order to make user able to retrieve the checkoutUrl.
-   * @param {RequestContext} ctx
-   * @param {Order} order
-   * @returns {Promise<CreatePaymentResult>} Payment result object.
+   *
+   * @param ctx Request context
+   * @param order Order object
+   * @param amount
+   * @param ___
+   * @param metadata
+   * @returns
    */
   createPayment: async (
     ctx: RequestContext,
     order: Order,
+    amount,
+    ___,
+    metadataPayment: PaymentMetadata
   ): Promise<CreatePaymentResult> => {
     try {
-      const metadata: PostV2OrdersResponse | null =
+      const metadataOrder: PostV2OrdersResponse | null =
         await scalapayService.createOrder(order);
 
-      if (!metadata) {
+      if (!metadataOrder) {
         return {
           amount: order.total,
           state: "Declined" as const,
@@ -70,11 +77,10 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
           },
         };
       }
-
       // store checkoutUrl into order.customFields
-      if (metadata?.checkoutUrl) {
+      if (metadataOrder?.checkoutUrl) {
         try {
-          order.customFields.scalapayCheckoutUrl = metadata.checkoutUrl;
+          order.customFields.scalapayCheckoutUrl = metadataOrder.checkoutUrl;
           await connection
             .getRepository(ctx, Order)
             .save(order, { reload: false });
@@ -91,12 +97,19 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
         }
       }
 
-      const chunks = metadata?.checkoutUrl?.split?.("/") || [];
+      const chunks = metadataOrder?.checkoutUrl?.split?.("/") || [];
+
+      const metadata: PostV2PaymentsCaptureResponse | { status: string } =
+        (await scalapayService.capturePayment(
+          metadataPayment.paymentIntentAmountReceived,
+          metadataPayment.paymentIntentToken
+        )) || {
+          status: "DECLINED",
+        };
 
       return {
         amount: order.total,
-        // state: "Authorized" => Troubles whenever user intentionally close scalapayCheckoutUrl.
-        state: "Created",
+        state: "Settled" as const,
         transactionId: chunks?.[chunks.length - 1] || undefined,
         metadata,
       };
@@ -119,47 +132,19 @@ const scalapayPaymentHandler = new PaymentMethodHandler({
    * @param {Payment} payment Payment to be settled.
    * @returns {Promise<SettlePaymentResult | SettlePaymentErrorResult>} Payment result object.
    */
-  settlePayment: async (
-    ctx: RequestContext,
-    order: Order,
-    payment: Payment,
-  ): Promise<SettlePaymentResult | SettlePaymentErrorResult> => {
-    try {
-      const token: string | null = order?.customFields?.scalapayToken || null;
-
-      if (!token) {
-        return {
-          success: false,
-          state: "Error",
-          errorMessage: `An error occurred while trying to retrieve Scalapay capture token within order ${order?.id}`,
-        } as SettlePaymentErrorResult;
-      }
-
-      const metadata: PostV2PaymentsCaptureResponse | { status: string } =
-        (await scalapayService.capturePayment(payment, token)) || {
-          status: "DECLINED",
-        };
-
-      return {
-        success: metadata?.status?.toLowerCase?.() === "approved",
-        metadata,
-      };
-    } catch (err: any) {
-      Logger.error(err, loggerCtx);
-      return {
-        success: false,
-        state: "Error",
-        errorMessage: err,
-      } as SettlePaymentErrorResult;
-    }
+  settlePayment(): SettlePaymentResult {
+    return {
+      success: true,
+    };
   },
+
   createRefund: async (
     ctx,
     input,
     amount,
     order,
     payment,
-    args,
+    args
   ): Promise<CreateRefundResult> => {
     try {
       const metadata = await scalapayService.refundPayment(amount);

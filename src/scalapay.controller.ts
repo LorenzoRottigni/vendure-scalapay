@@ -8,7 +8,7 @@ import { ScalapayPluginOptions } from "./types";
 export class ScalapayController {
   constructor(
     private scalapayService: ScalapayService,
-    @Inject(SCALAPAY_PLUGIN_OPTIONS) private options: ScalapayPluginOptions,
+    @Inject(SCALAPAY_PLUGIN_OPTIONS) private options: ScalapayPluginOptions
   ) {}
 
   @Get("scalapay")
@@ -24,14 +24,21 @@ export class ScalapayController {
     @Query("orderToken") orderToken: string,
     @Query("status") status: string,
     @Query("orderId") orderId: string,
+    @Query("merchantReference") merchantReference: string | null,
+    @Query("totalAmount") totalAmount: string | null,
     successUrl = this.options.successUrl,
-    errorUrl = this.options.failureUrl,
+    errorUrl = this.options.failureUrl
   ): Promise<void | { url?: string; statusCode?: number }> {
     try {
+      Logger.info(`Log query from scalapay: ` + JSON.stringify(ctx.req?.query));
       if (!orderId || !status || !orderToken || !ctx.session?.id) {
         !ctx.session?.id
-          ? Logger.error(`Unable to retrieve current session within received request.`)
-          : Logger.error(`Unable to settle Scalapay payment due to bad request.`);
+          ? Logger.error(
+              `Unable to retrieve current session within received request.`
+            )
+          : Logger.error(
+              `Unable to settle Scalapay payment due to bad request.`
+            );
         return { url: errorUrl };
       }
       const settleStatus = await this.scalapayService.settlePayment(
@@ -39,6 +46,8 @@ export class ScalapayController {
         status,
         orderId,
         orderToken,
+        merchantReference,
+        totalAmount,
       );
       if (!settleStatus) {
         return { url: errorUrl };
