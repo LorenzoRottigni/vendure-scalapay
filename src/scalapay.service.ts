@@ -11,7 +11,10 @@ import {
   Payment,
   OrderLine,
   EntityHydrator,
-  ErrorResult,
+  OrderStateTransitionError,
+  PaymentMethod,
+  PaymentMethodService,
+  InternalServerError,
 } from "@vendure/core";
 import type {
   PostV2OrdersResponse,
@@ -23,6 +26,7 @@ import type {
 } from "./types";
 import { SCALAPAY_PLUGIN_OPTIONS, loggerCtx } from "./constants";
 import { getScalapayUrl } from "./common";
+import scalapayPaymentHandler from "./scalapay.handler";
 
 @Injectable()
 export class ScalapayService {
@@ -30,7 +34,8 @@ export class ScalapayService {
     private connection: TransactionalConnection,
     private orderService: OrderService,
     private entityHydratorService: EntityHydrator,
-    @Inject(SCALAPAY_PLUGIN_OPTIONS) private options: ScalapayPluginOptions,
+    private paymentMethodService: PaymentMethodService,
+    @Inject(SCALAPAY_PLUGIN_OPTIONS) private options: ScalapayPluginOptions
   ) {
     Logger.info("SCALAPAY PLUGIN OPTIONS:");
     Logger.info(JSON.stringify(this.options, null, 2));
@@ -64,6 +69,8 @@ export class ScalapayService {
    * @param {string} orderStatus Query param from Scalapay confirmation redirect.
    * @param {string} orderId Query param from Scalapay confirmation redirect.
    * @param {string} orderToken Query param from Scalapay confirmation redirect.
+   * @param {string} merchantReference Query param from Scalapay
+   * @param {string} totalAmount Query param from Scalapay
    * @returns {Promise<boolean>} Settle status
    */
   public async settlePayment(
@@ -71,12 +78,14 @@ export class ScalapayService {
     orderStatus: string,
     orderId: string,
     orderToken: string,
-    fallbackState: OrderState = "AddingItems",
+    merchantReference: string | null,
+    totalAmount: string | null,
+    fallbackState: OrderState = "AddingItems"
   ): Promise<boolean> {
     try {
       if (orderStatus?.toLowerCase() !== "success") {
         Logger.error(
-          `An error occurred while trying to settle the Scalapay payment for order ${orderId}.`,
+          `An error occurred while trying to settle the Scalapay payment for order ${orderId}.`
         );
         await this.orderService.transitionToState(ctx, orderId, fallbackState);
         return false;
@@ -86,20 +95,53 @@ export class ScalapayService {
 
       if (!order) {
         Logger.error(
-          `An error occurred while trying to retrieve order ${orderId}.`,
+          `An error occurred while trying to retrieve order ${orderId}.`
         );
         await this.orderService.transitionToState(ctx, orderId, fallbackState);
         return false;
       }
 
-      const scalapayPayments =
-        order?.payments?.filter?.(
-          (payment) => payment?.method?.toLowerCase() === "scalapay",
-        ) || [];
+      if (order.state !== "ArrangingPayment") {
+        const transitionToStateResult =
+          await this.orderService.transitionToState(
+            ctx,
+            orderId,
+            "ArrangingPayment"
+          );
 
-      if (scalapayPayments.length === 0) {
+        if (transitionToStateResult instanceof OrderStateTransitionError) {
+          Logger.error(
+            `Error transitioning orderId ${orderId} to ArrangingPayment state: ${transitionToStateResult.message}`,
+            loggerCtx
+          );
+          await this.orderService.transitionToState(
+            ctx,
+            orderId,
+            fallbackState
+          );
+          return false;
+        }
+      }
+
+      const paymentMethod = await this.getPaymentMethod(ctx);
+
+      const addPaymentToOrderResult = await this.orderService.addPaymentToOrder(
+        ctx,
+        orderId,
+        {
+          method: paymentMethod.code,
+          metadata: {
+            paymentIntentAmountReceived: totalAmount,
+            paymentIntentToken: orderToken,
+            paymentScalapayStatus: orderStatus,
+          },
+        }
+      );
+
+      if (!(addPaymentToOrderResult instanceof Order)) {
         Logger.error(
-          `An error occurred while trying to retrieve Scalapay payments from order ${orderId}.`,
+          `Error adding payment to order ${orderId}: ${addPaymentToOrderResult.message}`,
+          loggerCtx
         );
         await this.orderService.transitionToState(ctx, orderId, fallbackState);
         return false;
@@ -115,33 +157,25 @@ export class ScalapayService {
         .getRepository(ctx, Order)
         .save(order, { reload: false });
 
-      
-      const settledPayments = await Promise.all(
-        scalapayPayments.map(
-          async (payment) => {
-            try {
-              const result = await this.orderService.settlePayment(ctx, payment.id)
-              if ((result as ErrorResult).message) {
-                throw Error(
-                  `Error settling payment ${payment.id} for order ${order.code}: ${
-                      (result as ErrorResult).errorCode
-                  } - ${(result as ErrorResult).message}`,
-                );
-              }
-              return result
-            } catch(err: any) {
-              Logger.error(err, loggerCtx)
-              return null
-            }
-          }
-        )
-      )
-
-      return !settledPayments.includes(null);
+      return true;
     } catch (err: any) {
       Logger.error(err, loggerCtx);
       return false;
     }
+  }
+
+  private async getPaymentMethod(ctx: RequestContext): Promise<PaymentMethod> {
+    const method = (await this.paymentMethodService.findAll(ctx)).items.find(
+      (m) => m.handler.code === scalapayPaymentHandler.code
+    );
+
+    if (!method) {
+      throw new InternalServerError(
+        `[${loggerCtx}] Could not find Stripe PaymentMethod`
+      );
+    }
+
+    return method;
   }
 
   /**
@@ -151,8 +185,8 @@ export class ScalapayService {
    * @returns {Promise<PostV2PaymentsCaptureResponse | null>}
    */
   public async capturePayment(
-    payment: Payment,
-    token: string,
+    amount: string | undefined,
+    token: string
   ): Promise<PostV2PaymentsCaptureResponse | null> {
     try {
       const sdk = api("@scalapaydocs/v1.1#tfpblg5few2e") as ScalapaySDK;
@@ -161,9 +195,7 @@ export class ScalapayService {
 
       const payload: ScalapayCaptureOrderInput = {
         amount: {
-          amount: payment?.amount
-            ? (payment.amount / 100)?.toString()
-            : undefined,
+          amount: amount,
           currency: "EUR",
         },
         token,
@@ -185,7 +217,7 @@ export class ScalapayService {
   public async refundPayment(amount: number) {
     try {
       const url = `${getScalapayUrl(
-        this.options.environment,
+        this.options.environment
       )}/v2/payments/refund`;
       const options = {
         method: "POST",
@@ -263,7 +295,7 @@ export class ScalapayService {
           // subcategory: productVariant?.customFields?.selectedCategory?.name,
           sku: productVariant?.sku,
           // brand: productVariant?.customFields?.brand?.[0]?.name,
-        }),
+        })
       ),
       discounts: order?.discounts?.map(({ amountWithTax }) => ({
         displayName: `${amountWithTax}%off`,
