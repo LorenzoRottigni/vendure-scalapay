@@ -11,7 +11,7 @@ import { ScalapayEnvironment, type ScalapayPluginOptions } from "./types";
 import { ScalapayController } from "./scalapay.controller";
 
 @VendurePlugin({
-  compatibility: '^2.0.0',
+  compatibility: '^3.0.0',
   imports: [PluginCommonModule],
   controllers: [ScalapayController],
   providers: [
